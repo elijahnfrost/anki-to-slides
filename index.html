@@ -26,6 +26,23 @@
     })();
   </script>
 
+  <script type="module">
+    // Auth-gate scope guards. The @elijahfrost/design-system main entry
+    // side-effect-imports the vanilla auto-script that walks
+    // data-requires-scope attributes and observes DOM mutations, so a bare
+    // import is sufficient. Named exports are stashed on window so the
+    // inline converter script below can call showUpgradePrompt from its
+    // 401 branch.
+    try {
+      const ds = await import("https://esm.sh/@elijahfrost/design-system@1?bundle");
+      window.__efScope = ds;
+    } catch (err) {
+      if (typeof console !== "undefined") {
+        console.warn("scope guard auto-script failed to load", err);
+      }
+    }
+  </script>
+
   <style>
     /* ----------------------------------------------------------------------
      * Design system tokens — synced from design-system/tokens.css.
@@ -1041,7 +1058,7 @@
           <div class="label" id="step-run-heading">Run the conversion</div>
         </div>
         <p class="workflow-step-hint">Runs in-browser; nothing stored. Big files use Blob, small ones post directly.</p>
-        <button type="submit" class="primary" id="submit" disabled>
+        <button type="submit" class="primary" id="submit" data-requires-scope="write" disabled>
           <span id="submit-label">Convert &amp; download</span>
           <span class="arrow" aria-hidden="true">→</span>
         </button>
@@ -1209,6 +1226,20 @@
   const entries = [];
   let nextId = 1;
   let converting = false;
+
+  // Auth-gate 401 backstop. Every write fetch in this file targets a
+  // same-origin /api/* endpoint under *.elijahfrost.com, so a 401 means
+  // the auth gate rejected the request — the Worker tags these with
+  // { error: "write_auth_required" }, but origin alone is enough. On
+  // match we surface the design-system upgrade prompt and tell the
+  // caller it handled the error so it can skip its own toast.
+  async function maybeShowScopeUpgradePrompt(res) {
+    if (!res || res.status !== 401) return false;
+    const ds = (typeof window !== "undefined") ? window.__efScope : null;
+    if (!ds || typeof ds.showUpgradePrompt !== "function") return false;
+    try { ds.showUpgradePrompt("write"); } catch (_) {}
+    return true;
+  }
 
   // Per-row format selector data.
   //
@@ -1780,6 +1811,7 @@
         }),
       }).catch(function () {});
       // #endregion
+      await maybeShowScopeUpgradePrompt(res);
       // /api/blob-upload's diagnostic branch includes a specific error
       // message — propagate it so users see the actionable reason
       // (missing env var, invalid body, etc.).
@@ -2104,6 +2136,7 @@
       : await postConvertRaw(entry, fmt);
 
     if (!res.ok) {
+      await maybeShowScopeUpgradePrompt(res);
       // Prefer the server's JSON error message when present. Vercel's
       // platform edge (e.g. a 413 on the raw-body path) responds with no
       // JSON body, so we fall back to tailored messages by status code.
