@@ -1,4 +1,4 @@
-<p align="center"><img src=".github/icon.svg" width="88" alt=""></p>
+<p align="center"><img src=".github/icon.png" width="88" alt=""></p>
 <h1 align="center">Anki to Slides</h1>
 <p align="center"><a href="https://ankislides.elijahfrost.com">ankislides.elijahfrost.com</a></p>
 
