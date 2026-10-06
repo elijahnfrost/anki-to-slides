@@ -1,4 +1,6 @@
-# Anki · Notion → Anything
+<p align="center"><img src=".github/icon.svg" width="88" alt=""></p>
+<h1 align="center">Anki to Slides</h1>
+<p align="center"><a href="https://ankislides.elijahfrost.com">ankislides.elijahfrost.com</a></p>
 
 Convert Anki exports **or** Notion toggle pages into a clean 16:9 slide deck (**PDF**, **PowerPoint .pptx**, or **PNG** zip), or back into an **Anki deck** (`.apkg` or `.txt + media .zip`).
 
